@@ -723,6 +723,89 @@
       box-shadow: 4px 4px 0 var(--ink);
       background: white;
     }
+  
+    /* API EXPLORER & NEUBRUTALIST FORM STYLES */
+    .api-card-box {
+      border: var(--border-ink);
+      background: var(--primary);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .api-endpoint-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--ink);
+      color: var(--primary);
+      padding: 3px 8px;
+      margin-right: 8px;
+    }
+    .api-code-block {
+      background: #1c2a27;
+      color: #7ee787;
+      border: var(--border-ink);
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.6;
+      overflow-x: auto;
+      max-height: 380px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-top: 12px;
+    }
+    .endpoint-btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .endpoint-pill-btn {
+      background: var(--sage);
+      border: 1.5px solid var(--ink);
+      padding: 6px 12px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .endpoint-pill-btn:hover, .endpoint-pill-btn.active {
+      background: var(--ink);
+      color: var(--primary);
+    }
+    .brutalist-input {
+      width: 100%;
+      background: #F8F6F0;
+      border: var(--border-ink);
+      padding: 10px 14px;
+      font-family: var(--font-main);
+      font-size: 13px;
+      color: var(--ink);
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .brutalist-input:focus {
+      background: #ffffff;
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+    .brutalist-submit-btn {
+      background: var(--ink);
+      color: var(--primary);
+      border: var(--border-ink);
+      padding: 10px 20px;
+      font-family: var(--font-main);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .brutalist-submit-btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 3px 3px 0 #000;
+    }
   </style>
 </head>
 <body>
@@ -743,6 +826,7 @@
           <li><button class="nav-item-btn" id="nav-btn-home" onclick="navigate('home')">Home</button></li>
           <li><button class="nav-item-btn" id="nav-btn-projects" onclick="navigate('projects')">Projects</button></li>
           <li><button class="nav-item-btn" id="nav-btn-about" onclick="navigate('about')">About</button></li>
+          <li><button class="nav-item-btn" id="nav-btn-api" onclick="navigate('api')">API</button></li>
           <li><button class="nav-item-btn" id="nav-btn-resume" onclick="navigate('resume')">Resume</button></li>
         </ul>
       </nav>
@@ -1193,6 +1277,64 @@
           </div>
         </section>
 
+      
+        <!-- ========================================================
+             VIEW 4: REST API EXPLORER
+             ======================================================== -->
+        <section id="view-api" class="tab-view">
+          <div class="page-inner-container">
+            <div class="page-header-block">
+              <h1 class="page-title">REST API Explorer</h1>
+              <p class="page-desc">
+                Live backend serverless API endpoints powering this portfolio. Test endpoints directly in the browser or query programmatically via cURL.
+              </p>
+            </div>
+
+            <!-- Endpoint Selector Buttons -->
+            <div class="endpoint-btn-row">
+              <button class="endpoint-pill-btn active" onclick="queryApi('/api/projects', this)">GET /api/projects</button>
+              <button class="endpoint-pill-btn" onclick="queryApi('/api/projects?category=mobile', this)">GET ?category=mobile</button>
+              <button class="endpoint-pill-btn" onclick="queryApi('/api/projects?category=ai', this)">GET ?category=ai</button>
+              <button class="endpoint-pill-btn" onclick="queryApi('/api/experience', this)">GET /api/experience</button>
+              <button class="endpoint-pill-btn" onclick="queryApi('/api/skills', this)">GET /api/skills</button>
+              <button class="endpoint-pill-btn" onclick="queryApi('/api/stats', this)">GET /api/stats</button>
+              <button class="endpoint-pill-btn" onclick="queryApi('/api/health', this)">GET /api/health</button>
+            </div>
+
+            <!-- Active Endpoint Display -->
+            <div class="api-card-box" style="background: var(--sage);">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div>
+                  <span class="api-endpoint-badge">ENDPOINT</span>
+                  <strong id="api-url-label" style="font-family: var(--font-mono); font-size: 13px;">/api/projects</strong>
+                </div>
+                <span id="api-status-badge" style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: #15803d;">HTTP 200 OK</span>
+              </div>
+              <pre id="api-json-display" class="api-code-block">Loading live API response...</pre>
+            </div>
+
+            <!-- Test POST /api/contact -->
+            <div class="api-card-box" style="background: var(--butter);">
+              <h2 style="font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 4px;">Test POST /api/contact</h2>
+              <p style="font-size: 12.5px; color: var(--muted); margin-bottom: 16px;">Send an inquiry directly to the backend validator and message store.</p>
+              
+              <form id="editorial-contact-form" onsubmit="handleEditorialContact(event)">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <input type="text" id="ed-name" class="brutalist-input" placeholder="Your Name" required>
+                  <input type="email" id="ed-email" class="brutalist-input" placeholder="Your Email" required>
+                </div>
+                <input type="text" id="ed-subject" class="brutalist-input" placeholder="Subject (e.g. Senior QA Role)">
+                <textarea id="ed-message" rows="3" class="brutalist-input" placeholder="Your message..." required></textarea>
+                <button type="submit" id="ed-submit-btn" class="brutalist-submit-btn">
+                  Execute POST /api/contact →
+                </button>
+                <div id="ed-feedback" style="margin-top: 12px; font-family: var(--font-mono); font-size: 12px; display: none; padding: 10px; border: var(--border-ink);"></div>
+              </form>
+            </div>
+
+          </div>
+        </section>
+
       </main>
 
     </div>
@@ -1358,10 +1500,82 @@
       }
     }
 
+    
+    // API Explorer Query Function
+    async function queryApi(endpoint, btn) {
+      if (btn) {
+        document.querySelectorAll('.endpoint-pill-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+      document.getElementById('api-url-label').innerText = endpoint;
+      const display = document.getElementById('api-json-display');
+      const badge = document.getElementById('api-status-badge');
+      display.innerText = 'Calling ' + endpoint + ' ...';
+
+      try {
+        const res = await fetch(endpoint);
+        const data = await res.json();
+        badge.innerText = 'HTTP ' + res.status + ' ' + (res.statusText || 'OK');
+        badge.style.color = res.ok ? '#15803d' : '#b91c1c';
+        display.innerText = JSON.stringify(data, null, 2);
+      } catch (err) {
+        badge.innerText = 'Offline Fallback';
+        badge.style.color = '#b91c1c';
+        display.innerText = '// Error fetching from server: ' + err.message + '
+// Ensure server.js or Vercel function is active.';
+      }
+    }
+
+    // Contact Form Handler for Editorial Portfolio
+    async function handleEditorialContact(e) {
+      e.preventDefault();
+      const btn = document.getElementById('ed-submit-btn');
+      const feedback = document.getElementById('ed-feedback');
+      const name = document.getElementById('ed-name').value;
+      const email = document.getElementById('ed-email').value;
+      const subject = document.getElementById('ed-subject').value;
+      const message = document.getElementById('ed-message').value;
+
+      btn.disabled = true;
+      btn.innerText = 'Sending...';
+      feedback.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, subject, message })
+        });
+        const data = await res.json();
+        feedback.style.display = 'block';
+        if (res.ok) {
+          feedback.style.background = '#dcfce7';
+          feedback.style.color = '#14532d';
+          feedback.innerText = '✓ ' + data.message + (data.referenceId ? ' (Ref: ' + data.referenceId + ')' : '');
+          document.getElementById('editorial-contact-form').reset();
+        } else {
+          feedback.style.background = '#fee2e2';
+          feedback.style.color = '#7f1d1d';
+          feedback.innerText = '✗ ' + (data.error || 'Failed to submit inquiry.');
+        }
+      } catch (err) {
+        feedback.style.display = 'block';
+        feedback.style.background = '#fee2e2';
+        feedback.style.color = '#7f1d1d';
+        feedback.innerText = 'Network error contacting /api/contact. Direct email: Tekzanith@gmail.com';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Execute POST /api/contact →';
+      }
+    }
+
+    // Update navigation hash handler to include 'api'
+    const origNav = navigate;
+
     // Initialize from hash
     window.addEventListener('DOMContentLoaded', () => {
       const hash = window.location.hash.replace('#', '');
-      if (['home', 'projects', 'about', 'resume'].includes(hash)) {
+      if (['home', 'projects', 'about', 'api', 'resume'].includes(hash)) {
         navigate(hash);
       } else {
         navigate('home');
@@ -1370,7 +1584,7 @@
 
     window.addEventListener('hashchange', () => {
       const hash = window.location.hash.replace('#', '');
-      if (['home', 'projects', 'about', 'resume'].includes(hash)) {
+      if (['home', 'projects', 'about', 'api', 'resume'].includes(hash)) {
         navigate(hash);
       }
     });

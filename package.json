@@ -1,0 +1,14 @@
+{
+  "name": "tekzanith-editorial-portfolio",
+  "version": "1.0.0",
+  "description": "Full-stack editorial portfolio and REST API for Tek Zanith",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node -e \"const http=require('http'); const s=require('./server.js').listen(3002, ()=>{ http.get('http://localhost:3002/api/health', (r)=>{ console.log('API Health Check:', r.statusCode); s.close(); process.exit(r.statusCode===200?0:1); }); });\""
+  },
+  "keywords": ["portfolio", "qa-engineer", "sdet", "editorial", "neubrutalism", "api", "fullstack"],
+  "author": "Tek Zanith",
+  "license": "MIT"
+}
