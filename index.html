@@ -806,6 +806,46 @@
       transform: translate(-2px, -2px);
       box-shadow: 3px 3px 0 #000;
     }
+  
+    /* API ACTIVITY MONITOR HUD */
+    .api-hud {
+      position: fixed;
+      bottom: 22px;
+      right: 26px;
+      z-index: 1000;
+      background: var(--ink);
+      color: var(--primary);
+      border: 1.5px solid var(--primary);
+      padding: 6px 14px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 3px 3px 0 rgba(0,0,0,0.35);
+      border-radius: 4px;
+      transition: all 0.25s ease;
+      pointer-events: none;
+    }
+    .hud-indicator {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 8px #34d399;
+      flex-shrink: 0;
+    }
+    .hud-indicator.busy {
+      background: #fbbf24;
+      box-shadow: 0 0 8px #fbbf24;
+      animation: pulse 1s infinite;
+    }
+    .hud-latency {
+      opacity: 0.75;
+      font-size: 10px;
+      margin-left: 4px;
+    }
   </style>
 </head>
 <body>
@@ -898,7 +938,7 @@
             </div>
 
             <!-- Projects Grid -->
-            <div class="projects-grid">
+            <div class="projects-grid" id="projects-grid">
 
               <!-- CARD 1 -->
               <div class="project-card-wrap" data-cat="professional ai" onclick="openModal('project-1')">
@@ -1465,9 +1505,143 @@
 
       window.location.hash = tabName;
       document.querySelector('.main-viewport').scrollTop = 0;
+
+      // Dispatch dynamic backend API call for active tab
+      if (tabName === 'projects') {
+        fetchAndRenderProjects('all');
+      } else if (tabName === 'about') {
+        apiRequest('/api/skills');
+        apiRequest('/api/experience');
+      } else if (tabName === 'home') {
+        fetchLiveStats();
+      } else if (tabName === 'api') {
+        queryApi('/api/projects');
+      }
     }
 
-    function filterProjects(category, btn) {
+    
+    // ========================================================
+    // CLIENT-SIDE API DISPATCHER & HUD MONITOR
+    // ========================================================
+    const API_BASE = (window.location.protocol === 'file:' || window.location.hostname.includes('github.io'))
+      ? 'https://tekzanith-editorial.vercel.app'
+      : '';
+
+    async function apiRequest(endpoint, options = {}) {
+      const hud = document.getElementById('api-hud');
+      const ind = document.getElementById('hud-indicator');
+      const msg = document.getElementById('hud-message');
+      const lat = document.getElementById('hud-latency');
+
+      const method = options.method || 'GET';
+      const startTime = performance.now();
+
+      if (ind) ind.className = 'hud-indicator busy';
+      if (msg) msg.innerText = method + ' ' + endpoint + '...';
+      if (lat) lat.innerText = '';
+
+      triggerProgress();
+
+      try {
+        const fullUrl = API_BASE + endpoint;
+        const res = await fetch(fullUrl, options);
+        const data = await res.json();
+        const duration = Math.round(performance.now() - startTime);
+
+        if (ind) ind.className = 'hud-indicator';
+        if (msg) msg.innerText = method + ' ' + endpoint + ' [' + res.status + ' OK]';
+        if (lat) lat.innerText = duration + 'ms';
+
+        console.log('[API Call]', method, fullUrl, res.status, duration + 'ms', data);
+        return { ok: res.ok, status: res.status, data: data };
+      } catch (err) {
+        const duration = Math.round(performance.now() - startTime);
+        if (ind) ind.className = 'hud-indicator';
+        if (msg) msg.innerText = method + ' ' + endpoint + ' [FAIL]';
+        if (lat) lat.innerText = duration + 'ms';
+        console.warn('[API Error]', method, endpoint, err);
+        return { ok: false, status: 0, error: err.message };
+      }
+    }
+
+    // Dynamic Project Loader via GET /api/projects
+    const cardColorMap = {
+      'professional': { bg: 'var(--sage)', text: 'var(--sage-text)' },
+      'mobile': { bg: 'var(--sky)', text: 'var(--sky-text)' },
+      'fintech': { bg: 'var(--blush)', text: 'var(--blush-text)' },
+      'ai': { bg: 'var(--butter)', text: 'var(--butter-text)' }
+    };
+
+    async function fetchAndRenderProjects(category = 'all', btn = null) {
+      if (btn) {
+        document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+      }
+
+      const ep = category === 'all' ? '/api/projects' : '/api/projects?category=' + category;
+      const res = await apiRequest(ep);
+
+      if (res.ok && res.data && res.data.data) {
+        const grid = document.getElementById('projects-grid');
+        if (!grid) return;
+
+        grid.innerHTML = res.data.data.map(p => {
+          const colors = cardColorMap[p.category] || { bg: 'var(--sage)', text: 'var(--sage-text)' };
+          const tagPills = p.tags.map(t => '<li class="project-tag-pill">' + t + '</li>').join('');
+          return '<div class="project-card-wrap" data-cat="' + p.category + '" onclick="fetchAndOpenProjectModal(\'' + p.id + '\')">' +
+            '<div class="card-shadow"></div>' +
+            '<div class="project-card-front" style="background: ' + colors.bg + '; color: ' + colors.text + ';">' +
+              '<div class="project-card-body">' +
+                '<div>' +
+                  '<span class="project-cat-tag">' + p.category.toUpperCase() + ' · API VERIFIED</span>' +
+                  '<p class="project-card-text">' + p.summary + '</p>' +
+                '</div>' +
+                '<ul class="project-tags-list">' + tagPills + '</ul>' +
+              '</div>' +
+              '<div class="project-card-footer" style="background: ' + colors.bg + ';">' +
+                '<span>' + p.title + '</span>' +
+                '<span>→</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+    }
+
+    // Modal detail loader via GET /api/projects?id=...
+    async function fetchAndOpenProjectModal(projectId) {
+      const res = await apiRequest('/api/projects?id=' + projectId);
+      const modalTitle = document.getElementById('modal-title');
+      const modalBody = document.getElementById('modal-body');
+
+      if (res.ok && res.data) {
+        const p = res.data;
+        modalTitle.innerText = p.title;
+        const highlightsList = (p.highlights || []).map(h => '<li>' + h + '</li>').join('');
+        modalBody.innerHTML = '<p><strong>Category:</strong> ' + p.category.toUpperCase() + ' · <strong>Status:</strong> Production Verified</p>' +
+          '<p style="margin-top: 10px;"><strong>Architecture & Achievements:</strong></p>' +
+          '<ul style="padding-left: 18px; margin-top: 8px; line-height: 1.7;">' + highlightsList + '</ul>' +
+          '<div style="margin-top: 16px; padding-top: 12px; border-top: 1px dashed rgba(42, 74, 68, 0.2);">' +
+            '<strong>Tech Stack:</strong> ' + p.tags.join(' · ') +
+          '</div>' +
+          '<div style="margin-top: 12px; font-family: var(--font-mono); font-size: 11px; opacity: 0.7;">' +
+            'Fetched in real-time from: /api/projects?id=' + projectId +
+          '</div>';
+        document.getElementById('project-modal').classList.add('active');
+      } else {
+        openModal(projectId);
+      }
+    }
+
+    // Fetch Stats on Home
+    async function fetchLiveStats() {
+      const res = await apiRequest('/api/stats');
+      if (res.ok && res.data && res.data.data) {
+        console.log('[API Stats Loaded]:', res.data.data);
+      }
+    }
+
+    function filterProjects(category, btn) { fetchAndRenderProjects(category, btn); return;
       document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
 
@@ -1589,5 +1763,12 @@
       }
     });
   </script>
+
+  <!-- Live API Request Monitor HUD -->
+  <div id="api-hud" class="api-hud">
+    <span id="hud-indicator" class="hud-indicator"></span>
+    <span id="hud-message">API: Idle</span>
+    <span id="hud-latency" class="hud-latency"></span>
+  </div>
 </body>
 </html>
