@@ -889,23 +889,22 @@
               <!-- 2 Large Neubrutalist Cards (Work & Info) -->
               <div class="home-cards-grid">
                 <!-- WORK / PROJECTS -->
-                <button class="neubrutalist-card-btn" onclick="navigate('projects')">
+                <a href="#projects" class="neubrutalist-card-btn" onclick="navigate('projects'); return false;">
                   <div class="card-shadow"></div>
                   <div class="card-front" style="background: var(--sage); color: var(--sage-text);">
                     <p class="card-category-label">Work</p>
                     <p class="card-action-title">Projects →</p>
                   </div>
-                </button>
+                </a>
 
                 <!-- INFO / ABOUT -->
-                <button class="neubrutalist-card-btn" onclick="navigate('about')">
+                <a href="#about" class="neubrutalist-card-btn" onclick="navigate('about'); return false;">
                   <div class="card-shadow"></div>
                   <div class="card-front" style="background: var(--blush); color: var(--blush-text);">
                     <p class="card-category-label">Info</p>
                     <p class="card-action-title">About →</p>
                   </div>
-                </button>
-              </div>
+                </a>
 
               <!-- Quick Contact Strip -->
               <div class="home-footer-strip">
@@ -1096,7 +1095,7 @@
 
         <!-- ========================================================
              VIEW 3: ABOUT VIEW (Bio, Taxonomy & Career)
-             ======================================================== */
+             ======================================================== -->
         <section id="view-about" class="tab-view">
           <div class="page-inner-container">
 
@@ -1366,7 +1365,7 @@
                 <input type="text" id="ed-subject" class="brutalist-input" placeholder="Subject (e.g. Senior QA Role)">
                 <textarea id="ed-message" rows="3" class="brutalist-input" placeholder="Your message..." required></textarea>
                 <button type="submit" id="ed-submit-btn" class="brutalist-submit-btn">
-                  Execute POST /api/contact →
+                  Submit Inquiry →
                 </button>
                 <div id="ed-feedback" style="margin-top: 12px; font-family: var(--font-mono); font-size: 12px; display: none; padding: 10px; border: var(--border-ink);"></div>
               </form>
@@ -1695,8 +1694,7 @@
       } catch (err) {
         badge.innerText = 'Offline Fallback';
         badge.style.color = '#b91c1c';
-        display.innerText = '// Error fetching from server: ' + err.message + '
-// Ensure server.js or Vercel function is active.';
+        display.innerText = '// Error fetching from server: ' + err.message + '\n// Ensure server.js or Vercel function is active.';
       }
     }
 
@@ -1739,10 +1737,9 @@
         feedback.innerText = 'Network error contacting /api/contact. Direct email: Tekzanith@gmail.com';
       } finally {
         btn.disabled = false;
-        btn.innerText = 'Execute POST /api/contact →';
+        btn.innerText = 'Submit Inquiry →';
       }
     }
-
     // Update navigation hash handler to include 'api'
     const origNav = navigate;
 
